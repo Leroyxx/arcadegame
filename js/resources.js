@@ -35,6 +35,7 @@
      * called by the public image loader function.
      */
     function _load(url) {
+      //console.log(resourceCache);
         if(resourceCache[url]) {
             /* If this URL has been previously loaded it will exist within
              * our resourceCache array. Just return that image rather
@@ -52,12 +53,15 @@
                  * attempts to load this file in the future.
                  */
                 resourceCache[url] = img;
+                //console.log(resourceCache);
 
                 /* Once the image is actually loaded and properly cached,
                  * call all of the onReady() callbacks we have defined.
                  */
                 if(isReady()) {
-                    readyCallbacks.forEach(function(func) { func(); });
+                    readyCallbacks.forEach(function(func) { func();
+                      //console.log(func);
+                    });
                 }
             };
 
@@ -86,6 +90,7 @@
         for(var k in resourceCache) {
             if(resourceCache.hasOwnProperty(k) &&
                !resourceCache[k]) {
+              //console.log(resourceCache[k]);
                 ready = false;
             }
         }
