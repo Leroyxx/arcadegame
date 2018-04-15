@@ -9,14 +9,33 @@ let sizes = {
   y0E: 60, // same for y axis
   x0P: 202,// player starting point on x axis
   y0P: 400, // same for y axis
-  getRandomSpot: function(axis) {
+  usedSpots: [],
+  getRandomSpot: function(axis, xval) {
     if (axis === "x") {
       let step = getRandomInt(5);
-      return step*this.horizontalStep;
+      let xVal = step*this.horizontalStep;
+      return xVal;
     }
-    else if (axis === "y") {
-      let step = getRandomInt(5);
-      if (step === 0) {return 48} else if (step === 4) {return this.verticalStep * 3 + 48} else {return this.verticalStep * step + 48 }
+    else if (axis === "y" && xval) {
+      let yVal;
+      let it = this;
+
+      function calcY() {
+        let step = getRandomInt(5);
+        if (step === 0) {yVal = 48} else if (step == 4) {yVal = it.verticalStep * 3 + 48} else {yVal = it.verticalStep * step + 48 }}
+      function setY() { 
+        calcY();
+        if (sizes.usedSpots[0]) {
+        for (let spot of sizes.usedSpots) {
+            let spotXVal = spot["x"];
+            let spotYVal = spot["y"];
+            if (spotXVal === xval && spotYVal === yVal) {
+                setY(); break; } //prevent two gems/other future objects from landing on the same spot
+        }
+      }};
+      setY();
+      sizes.usedSpots.push({"x": xval, "y": yVal});
+      return yVal;
     }
   }
 }
@@ -61,7 +80,7 @@ Counter.prototype.render = function() {
 
 var Jewel = function() {
   this.x = sizes.getRandomSpot("x");
-  this.y = sizes.getRandomSpot("y");
+  this.y = sizes.getRandomSpot("y", this.x);
   this.height = (function(y){if (y === 48) {return 1} else {
     return ( ( y - 48 ) / 83 ) + 1
   }})(this.y);
