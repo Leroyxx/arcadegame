@@ -4,38 +4,47 @@ let sizes = {
   verticalStep: 83,
   enemiesNum: 6,
   jewelsNum: getRandomInt(6),
-  rocksNum: getRandomInt(3),
+  rocksNum: getRandomInt(4),
   enemySpeeds: [150, 94, 70, 50, 100, 210],
   x0E: 1, // enemy starting point on x axis
   y0E: 60, // same for y axis
   x0P: 202,// player starting point on x axis
   y0P: 400, // same for y axis
   usedSpots: [],
-  getRandomSpot: function(axis, xval) {
+  getRandomSpot: function(axis, obj) {
+    let step = getRandomInt(5);
+    let xVal = step*sizes.horizontalStep;
     if (axis === "x") {
-      let step = getRandomInt(5);
-      let xVal = step*this.horizontalStep;
       return xVal;
     }
-    else if (axis === "y" && xval) {
+    else if (axis === "y" && obj) {
       let yVal;
-      let it = this;
 
       function calcY() {
-        let step = getRandomInt(5);
-        if (step === 0) {yVal = 48} else if (step == 4) {yVal = it.verticalStep * 3 + 48} else {yVal = it.verticalStep * step + 48 }}
+        step = getRandomInt(5);
+        xVal = step*sizes.horizontalStep;
+        if (step === 0) {yVal = 48;} else if (step == 4) {yVal = sizes.verticalStep * 3 + 48;} else {yVal = sizes.verticalStep * step + 48; }
+      }
+
       function setY() {
         calcY();
         if (sizes.usedSpots[0]) {
         for (let spot of sizes.usedSpots) {
             let spotXVal = spot["x"];
             let spotYVal = spot["y"];
-            if (spotXVal === xval && spotYVal === yVal) {
-                setY(); break; } //prevent two gems/other future objects from landing on the same spot
+            console.log(obj.x, yVal);
+            console.log(spotXVal, spotYVal);
+            if (obj.x === spotXVal && yVal === spotYVal) {
+                // xVal is a new x value, obj.x is the x value that's assigned
+                // spotXVal and spotYVal are the written values we don't want repeating together
+                // yVal is the y value to get potentially assigned
+                // change the y and x of the object in order to...
+                obj.x=xVal;
+                setY(); break; } //prevent two gems/other future objects from landing on the same spot else
         }
-      }};
+      }}
       setY();
-      sizes.usedSpots.push({"x": xval, "y": yVal});
+      sizes.usedSpots.push({"x": obj.x, "y": yVal});
       return yVal;
     }
   }
@@ -81,7 +90,7 @@ Counter.prototype.render = function() {
 
 var Jewel = function() {
   this.x = sizes.getRandomSpot("x");
-  this.y = sizes.getRandomSpot("y", this.x);
+  this.y = sizes.getRandomSpot("y", this);
   this.height = (function(y){if (y === 48) {return 1} else {
     return ( ( y - 48 ) / 83 ) + 1
   }})(this.y);
@@ -120,11 +129,19 @@ Jewel.prototype.addPoints = function() {
 
 var Rock = function() {
   this.x = sizes.getRandomSpot("x");
-  this.y = sizes.getRandomSpot("y", this.x);
+  this.y = sizes.getRandomSpot("y", this);
   this.height = (function(y){if (y === 48) {return 1} else {
     return ( ( y - 48 ) / 83 ) + 1
   }})(this.y);
   this.sprite = 'images/Rock.png';
+}
+
+Rock.prototype.reset = function() {
+  if (!Jewel.prototype.isResetting) {
+  allRocks = [];
+  sizes.rocksNum = getRandomInt(3);
+  createRocks();
+}
 }
 
 Rock.prototype.render = function() {
@@ -233,6 +250,7 @@ Player.prototype.render = function (dt) {
   let it = this;
   if (this.y === -15) {
     Jewel.prototype.reset();
+    Rock.prototype.reset();
     Jewel.prototype.isResetting = true;
     setTimeout(function(){
       it.x = sizes.x0P;
@@ -326,7 +344,7 @@ Player.prototype.handleInput = function(keyCode) {
 var allEnemies = [];
 var allJewels = [];
 var allRocks = [];
-var onePlaceObjects = []; //TODO: align z index of rocks and jewels etc correctly by sorting them in an array
+var stillObjects = []; //TODO: align z index of rocks and jewels etc correctly by sorting them in an array
 // from lowest y value to highest and calling the render method on this new array instead
 for (var i=0; i<sizes.enemiesNum; i++) {
   allEnemies.push(new Enemy());
@@ -343,6 +361,7 @@ function createRocks() {
 }
 createRocks();
 createJewels();
+
 var jewelCount = new Counter("jewel");
 var player = new Player();
 
