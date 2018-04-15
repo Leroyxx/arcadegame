@@ -149,11 +149,14 @@ var Engine = (function(global) {
         /* Loop through all of the objects within the allEnemies array and call
          * the render function you have defined.
          */
+         allJewels.forEach(function(jewel) {
+           jewel.render();
+         })
         allEnemies.forEach(function(enemy) {
             enemy.render();
         });
-
         player.render();
+        jewelCount.render();
     }
 
     /* This function does nothing but it could have been a good place to
@@ -169,6 +172,10 @@ var Engine = (function(global) {
      * all of these images are properly loaded our game will start.
      */
     Resources.load([
+        'images/GemBlue.png',
+        'images/GemGreen.png',
+        'images/GemOrange.png',
+        'images/GemEmpty.png',
         'images/stone-block.png',
         'images/water-block.png',
         'images/grass-block.png',
