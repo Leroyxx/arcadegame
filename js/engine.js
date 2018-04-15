@@ -149,6 +149,9 @@ var Engine = (function(global) {
         /* Loop through all of the objects within the allEnemies array and call
          * the render function you have defined.
          */
+         allRocks.forEach(function(rock) {
+           rock.render();
+         });
          allJewels.forEach(function(jewel) {
            jewel.render();
          })
@@ -179,6 +182,7 @@ var Engine = (function(global) {
         'images/stone-block.png',
         'images/water-block.png',
         'images/grass-block.png',
+        'images/Rock.png',
         'images/enemy-bug.png',
         'images/char-boy.png',
         'images/char-horn-girl.png',

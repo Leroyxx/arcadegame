@@ -4,6 +4,7 @@ let sizes = {
   verticalStep: 83,
   enemiesNum: 6,
   jewelsNum: getRandomInt(6),
+  rocksNum: getRandomInt(3),
   enemySpeeds: [150, 94, 70, 50, 100, 210],
   x0E: 1, // enemy starting point on x axis
   y0E: 60, // same for y axis
@@ -23,7 +24,7 @@ let sizes = {
       function calcY() {
         let step = getRandomInt(5);
         if (step === 0) {yVal = 48} else if (step == 4) {yVal = it.verticalStep * 3 + 48} else {yVal = it.verticalStep * step + 48 }}
-      function setY() { 
+      function setY() {
         calcY();
         if (sizes.usedSpots[0]) {
         for (let spot of sizes.usedSpots) {
@@ -103,6 +104,7 @@ Jewel.prototype.isResetting = false;
 Jewel.prototype.reset = function() {
   if (!Jewel.prototype.isResetting) {
   allJewels = [];
+  sizes.usedSpots = [];
   sizes.jewelsNum = getRandomInt(6);
   createJewels();
 }
@@ -116,6 +118,32 @@ Jewel.prototype.addPoints = function() {
   }
 }
 
+var Rock = function() {
+  this.x = sizes.getRandomSpot("x");
+  this.y = sizes.getRandomSpot("y", this.x);
+  this.height = (function(y){if (y === 48) {return 1} else {
+    return ( ( y - 48 ) / 83 ) + 1
+  }})(this.y);
+  this.sprite = 'images/Rock.png';
+}
+
+Rock.prototype.render = function() {
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+}
+
+Rock.prototype.collision = function(playerX) {
+  let collided = false;
+  allRocks.forEach(function(rock) {
+    if (player.height === rock.height ) {
+      if (playerX === rock.x )
+      {
+        collided = true;
+      }
+    }
+  }
+)
+return collided;
+}
 
 Jewel.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
@@ -171,6 +199,9 @@ var Player = function() {
   this.x = sizes.x0P;
   this.y = sizes.y0P;
   this.height = 5;
+  this.oldX;
+  this.oldY;
+  this.oldHeight;
 }
 
 // Calling reset on player will put the player back to first square
@@ -192,6 +223,8 @@ Player.prototype.update = function (dt) {
   if (this.y >= sizes.y0P) {
     this.y = sizes.y0P;
   }
+
+if (Rock.prototype.collision(this.x)) {this.x = this.oldX; this.y = this.oldY; this.height = this.oldHeight}
 
 }
 
@@ -252,6 +285,9 @@ return collided;
 }
 
 Player.prototype.handleInput = function(keyCode) {
+  this.oldX = this.x;
+  this.oldY = this.y;
+  this.oldHeight = this.height;
   switch (keyCode) {
     case 'left':
       this.x -= sizes.horizontalStep;
@@ -289,14 +325,23 @@ Player.prototype.handleInput = function(keyCode) {
 
 var allEnemies = [];
 var allJewels = [];
+var allRocks = [];
+var onePlaceObjects = []; //TODO: align z index of rocks and jewels etc correctly by sorting them in an array
+// from lowest y value to highest and calling the render method on this new array instead
 for (var i=0; i<sizes.enemiesNum; i++) {
   allEnemies.push(new Enemy());
 }
 function createJewels() {
   for (var e=0; e<sizes.jewelsNum; e++) {
-  allJewels.push(new Jewel());
+    allJewels.push(new Jewel());
 }
 }
+function createRocks() {
+  for (var i=0; i<sizes.rocksNum; i++) {
+    allRocks.push(new Rock());
+  }
+}
+createRocks();
 createJewels();
 var jewelCount = new Counter("jewel");
 var player = new Player();
