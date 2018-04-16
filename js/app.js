@@ -5,6 +5,7 @@ let sizes = {
   enemiesNum: 6,
   jewelsNum: getRandomInt(6),
   rocksNum: getRandomInt(4),
+  heartsNum: 1,
   enemySpeeds: [150, 94, 70, 50, 100, 210],
   x0E: 1, // enemy starting point on x axis
   y0E: 60, // same for y axis
@@ -48,7 +49,8 @@ let sizes = {
   }
 }
 let obtained = {
-  jewels: 0
+  jewels: 0,
+  lives: 5,
 }
 
 function getRandomInt(max) {
@@ -62,7 +64,12 @@ var Counter = function(type) {
   this.value;
   if (this.type === "jewel") {
     this.value = obtained.jewels;
-    this.x = 80;
+    this.x = 110;
+    this.y = 40;
+  }
+  if (this.type === "lives") {
+    this.value = obtained.lives;
+    this.x = 320;
     this.y = 40;
   }
   //DESIGN RELATED:
@@ -73,6 +80,9 @@ Counter.prototype.update = function() {
   if (this.type === "jewel") {
     this.value = obtained.jewels;
   }
+  if (this.type === "lives") {
+    this.value = obtained.lives;
+  }
   this.widthOfText = ctx.measureText(this.text);
 }
 
@@ -80,9 +90,12 @@ Counter.prototype.render = function() {
   ctx.font = '36px Tahoma';
   ctx.strokeText(this.value, this.x, this.y);
   this.widthOfText = ctx.measureText(this.value).width;
+  ctx.font = '21px Tahoma';
   if (this.type === "jewel") {
-    ctx.font = '21px Tahoma';
     ctx.fillText('points', this.x+this.widthOfText+5, this.y);
+  }
+  else if (this.type === "lives") {
+    ctx.fillText('lives', this.x+this.widthOfText+5, this.y);
   }
 }
 
@@ -103,7 +116,7 @@ var Jewel = function() {
     }
     return sprite
   })();
-  let isAddingPoints = false;
+  this.isAddingPoints = false;
 }
 
 Jewel.prototype.isResetting = false;
@@ -122,6 +135,25 @@ Jewel.prototype.addPoints = function() {
     this.isAddingPoints = true;
     obtained.jewels += this.value;
     jewelCount.update();
+  }
+}
+
+var Heart = function() {
+  this.x = sizes.getRandomSpot("x");
+  this.y = sizes.getRandomSpot("y", this);
+  this.value = 1;
+  this.height = (function(y){if (y === 48) {return 1} else {
+    return ( ( y - 48 ) / 83 ) + 1
+  }})(this.y);
+  this.sprite = 'images/Heart.png';
+  this.isAddingLives = false;
+}
+
+Heart.prototype.addPoints = function() {
+  if (!this.isAddingPoints) {
+    this.isAddingPoints = true;
+    obtained.lives += this.value;
+    livesCount.update();
   }
 }
 
@@ -221,9 +253,13 @@ var Player = function() {
 
 // Calling reset on player will put the player back to first square
 Player.prototype.reset = function () {
-  this.x = sizes.x0P
-  this.y = sizes.y0P;
-  this.height = 5;
+  if (!Player.prototype.isResetting) {
+    this.x = sizes.x0P;
+    this.y = sizes.y0P;
+    this.height = 5;
+    obtained.lives--;
+    livesCount.update();
+}
 }
 
 Player.prototype.update = function (dt) {
@@ -244,6 +280,9 @@ if (Rock.prototype.collision(this.x)) {this.x = this.oldX; this.y = this.oldY; t
 }
 
 Player.prototype.render = function (dt) {
+  if (Player.prototype.isResetting) {
+    ctx.drawImage(Resources.get('images/Selector.png'), this.x, this.y);
+  } // render the "invincibillity" sprite
   ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
   let it = this;
   if (this.y === -15) {
@@ -258,6 +297,7 @@ Player.prototype.render = function (dt) {
     //show the player it has reached victory! then respawn it
   }
   let collidedJewel = Jewel.prototype.collision(this.x);
+  let collidedHeart = Heart.prototype.collision(this.x);
   if ( collidedJewel && !collidedJewel.isAddingPoints ) {
     collidedJewel.addPoints();
     collidedJewel.value = 0;
@@ -265,12 +305,27 @@ Player.prototype.render = function (dt) {
       collidedJewel.sprite = 'images/GemEmpty.png';
     }, 75)
   }
+  if (collidedHeart && !collidedHeart.isAddingLives) {
+    collidedHeart.addPoints();
+    collidedHeart.value = 0;
+    setTimeout(function(){
+      collidedHeart.sprite = 'images/GemEmpty.png';
+    }, 75)
+  }
   if( Enemy.prototype.collision(this.x) ) {
       setTimeout(function(){
-        player.reset();
-      }, 50)
-  }
+            player.reset()
+            Player.prototype.isResetting = true;
+          }, 50)
+      setTimeout(function() {
+          Player.prototype.isResetting = false;
+      }, 800) // the time gap between the first timeout and the second timeout
+      // is assumed to prevent getting double damage from two enemies (800-50=750ms)
+      // this can also be used for an after-death invincibillity time gap
 }
+}
+
+Player.prototype.isResetting = false;
 
 Enemy.prototype.collision = function(playerX) {
   let collided = false;
@@ -298,6 +353,23 @@ Jewel.prototype.collision = function(playerX) {
   }
 )
 return collided;
+}
+
+Heart.prototype.render = function() {
+  ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+}
+
+Heart.prototype.collision = function(playerX) {
+  let collided = false;
+  allHearts.forEach(function(heart) {
+    if (heart.height === player.height) {
+      if (playerX === heart.x)
+      {
+        collided = heart;
+      }
+    }
+  })
+  return collided
 }
 
 Player.prototype.handleInput = function(keyCode) {
@@ -342,6 +414,7 @@ Player.prototype.handleInput = function(keyCode) {
 var allEnemies = [];
 var allJewels = [];
 var allRocks = [];
+var allHearts = [];
 var stillObjects = []; //align z index of rocks and jewels etc correctly by sorting them in an array
 // from lowest y value to highest and calling the render method on this new array instead
 for (var i=0; i<sizes.enemiesNum; i++) {
@@ -357,12 +430,19 @@ function createRocks() {
     allRocks.push(new Rock());
   }
 }
+function createHearts() {
+  for (var e=0; e<sizes.heartsNum; e++) {
+    allHearts.push(new Heart());
+  }
+}
 createRocks();
 createJewels();
+createHearts();
 
 function orderStillObjects() { //this is how we allign the still objects' visuals correctly
   stillObjects.push(...allJewels);
   stillObjects.push(...allRocks);
+  stillObjects.push(...allHearts);
   stillObjects.sort(function(obj1, obj2) {
     return obj1.y - obj2.y;
   })
@@ -371,6 +451,7 @@ orderStillObjects();
 
 
 var jewelCount = new Counter("jewel");
+var livesCount = new Counter("lives");
 var player = new Player();
 
 // This listens for key presses and sends the keys to your

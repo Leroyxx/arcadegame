@@ -157,6 +157,7 @@ var Engine = (function(global) {
         });
         player.render();
         jewelCount.render();
+        livesCount.render();
     }
 
     /* This function does nothing but it could have been a good place to
@@ -172,6 +173,7 @@ var Engine = (function(global) {
      * all of these images are properly loaded our game will start.
      */
     Resources.load([
+        'images/Selector.png',
         'images/GemBlue.png',
         'images/GemGreen.png',
         'images/GemOrange.png',
@@ -185,7 +187,8 @@ var Engine = (function(global) {
         'images/char-horn-girl.png',
         'images/char-pink-girl.png',
         'images/char-princess-girl.png',
-        'images/char-cat-girl.png'
+        'images/char-cat-girl.png',
+        'images/Heart.png'
     ]);
     Resources.onReady(init);
 
