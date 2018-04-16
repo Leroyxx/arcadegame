@@ -51,6 +51,7 @@ let sizes = {
 let obtained = {
   jewels: 0,
   lives: 5,
+  stage: 1
 }
 
 function getRandomInt(max) {
@@ -80,8 +81,11 @@ Counter.prototype.update = function() {
   if (this.type === "jewel") {
     this.value = obtained.jewels;
   }
-  if (this.type === "lives") {
+  else if (this.type === "lives") {
     this.value = obtained.lives;
+  }
+  else if (this.type === "stage") {
+    this.value = obtained.stage;
   }
   this.widthOfText = ctx.measureText(this.text);
 }
@@ -96,6 +100,9 @@ Counter.prototype.render = function() {
   }
   else if (this.type === "lives") {
     ctx.fillText('lives', this.x+this.widthOfText+5, this.y);
+  }
+  else if (this.type === "stage") {
+    ctx.fillText('stage', this.x+this.widthOfText+5, this.y);
   }
 }
 
@@ -286,8 +293,10 @@ Player.prototype.render = function (dt) {
   ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
   let it = this;
   if (this.y === -15) {
+    console.log("if");
     Jewel.prototype.reset();
     Rock.prototype.reset();
+    orderStillObjects();
     Jewel.prototype.isResetting = true;
     setTimeout(function(){
       it.x = sizes.x0P;
@@ -440,6 +449,7 @@ createJewels();
 createHearts();
 
 function orderStillObjects() { //this is how we allign the still objects' visuals correctly
+  stillObjects = [];
   stillObjects.push(...allJewels);
   stillObjects.push(...allRocks);
   stillObjects.push(...allHearts);
@@ -466,4 +476,5 @@ document.addEventListener('keyup', function(e) {
     };
 
     player.handleInput(allowedKeys[e.keyCode]);
+
 });
