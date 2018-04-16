@@ -32,8 +32,6 @@ let sizes = {
         for (let spot of sizes.usedSpots) {
             let spotXVal = spot["x"];
             let spotYVal = spot["y"];
-            console.log(obj.x, yVal);
-            console.log(spotXVal, spotYVal);
             if (obj.x === spotXVal && yVal === spotYVal) {
                 // xVal is a new x value, obj.x is the x value that's assigned
                 // spotXVal and spotYVal are the written values we don't want repeating together
@@ -344,7 +342,7 @@ Player.prototype.handleInput = function(keyCode) {
 var allEnemies = [];
 var allJewels = [];
 var allRocks = [];
-var stillObjects = []; //TODO: align z index of rocks and jewels etc correctly by sorting them in an array
+var stillObjects = []; //align z index of rocks and jewels etc correctly by sorting them in an array
 // from lowest y value to highest and calling the render method on this new array instead
 for (var i=0; i<sizes.enemiesNum; i++) {
   allEnemies.push(new Enemy());
@@ -361,6 +359,16 @@ function createRocks() {
 }
 createRocks();
 createJewels();
+
+function orderStillObjects() { //this is how we allign the still objects' visuals correctly
+  stillObjects.push(...allJewels);
+  stillObjects.push(...allRocks);
+  stillObjects.sort(function(obj1, obj2) {
+    return obj1.y - obj2.y;
+  })
+}
+orderStillObjects();
+
 
 var jewelCount = new Counter("jewel");
 var player = new Player();
