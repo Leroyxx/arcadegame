@@ -158,6 +158,7 @@ var Engine = (function(global) {
         player.render();
         jewelCount.render();
         livesCount.render();
+        stageCount.render();
     }
 
     /* This function does nothing but it could have been a good place to
@@ -174,6 +175,7 @@ var Engine = (function(global) {
      */
     Resources.load([
         'images/Selector.png',
+        'images/Selector2.png',
         'images/GemBlue.png',
         'images/GemGreen.png',
         'images/GemOrange.png',

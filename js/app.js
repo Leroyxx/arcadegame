@@ -51,7 +51,8 @@ let sizes = {
 let obtained = {
   jewels: 0,
   lives: 5,
-  stage: 1
+  stage: 1,
+  invincibillity: false,//timeoutID
 }
 
 function getRandomInt(max) {
@@ -65,12 +66,17 @@ var Counter = function(type) {
   this.value;
   if (this.type === "jewel") {
     this.value = obtained.jewels;
-    this.x = 110;
+    this.x = 70;
     this.y = 40;
   }
   if (this.type === "lives") {
     this.value = obtained.lives;
-    this.x = 320;
+    this.x = 335;
+    this.y = 40;
+  }
+  if (this.type === "stage") {
+    this.value = obtained.stage;
+    this.x = 205;
     this.y = 40;
   }
   //DESIGN RELATED:
@@ -102,7 +108,8 @@ Counter.prototype.render = function() {
     ctx.fillText('lives', this.x+this.widthOfText+5, this.y);
   }
   else if (this.type === "stage") {
-    ctx.fillText('stage', this.x+this.widthOfText+5, this.y);
+    ctx.font = '17px Tahoma';
+    ctx.fillText('st Stage', this.x+this.widthOfText, this.y);
   }
 }
 
@@ -287,13 +294,12 @@ if (Rock.prototype.collision(this.x)) {this.x = this.oldX; this.y = this.oldY; t
 }
 
 Player.prototype.render = function (dt) {
-  if (Player.prototype.isResetting) {
-    ctx.drawImage(Resources.get('images/Selector.png'), this.x, this.y);
+  if (obtained.invincibillity) {
+    ctx.drawImage(Resources.get('images/Selector2.png'), this.x, this.y);
   } // render the "invincibillity" sprite
   ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
   let it = this;
   if (this.y === -15) {
-    console.log("if");
     Jewel.prototype.reset();
     Rock.prototype.reset();
     orderStillObjects();
@@ -321,15 +327,17 @@ Player.prototype.render = function (dt) {
       collidedHeart.sprite = 'images/GemEmpty.png';
     }, 75)
   }
-  if( Enemy.prototype.collision(this.x) ) {
-      setTimeout(function(){
+  if( Enemy.prototype.collision(this.x) && obtained.invincibillity ) {
+
+  }
+  else if( Enemy.prototype.collision(this.x) ) {
             player.reset()
             Player.prototype.isResetting = true;
-          }, 50)
-      setTimeout(function() {
+      obtained.invincibillity = setTimeout(function() {
           Player.prototype.isResetting = false;
+          obtained.invincibillity = false;
       }, 800) // the time gap between the first timeout and the second timeout
-      // is assumed to prevent getting double damage from two enemies (800-50=750ms)
+      // is assumed to prevent getting double damage from two enemies
       // this can also be used for an after-death invincibillity time gap
 }
 }
@@ -462,6 +470,7 @@ orderStillObjects();
 
 var jewelCount = new Counter("jewel");
 var livesCount = new Counter("lives");
+var stageCount = new Counter("stage");
 var player = new Player();
 
 // This listens for key presses and sends the keys to your
