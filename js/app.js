@@ -90,7 +90,8 @@ Counter.prototype.update = function() {
   else if (this.type === "lives") {
     this.value = obtained.lives;
   }
-  else if (this.type === "stage") {
+  else if (this.type === "stage" && !Jewel.prototype.isResetting) {
+    obtained.stage++
     this.value = obtained.stage;
   }
   this.widthOfText = ctx.measureText(this.text);
@@ -297,11 +298,15 @@ Player.prototype.render = function (dt) {
   if (obtained.invincibillity) {
     ctx.drawImage(Resources.get('images/Selector2.png'), this.x, this.y);
   } // render the "invincibillity" sprite
+  if (player.changePlayerSprite) {
+    ctx.drawImage(Resources.get('images/Selector.png'), this.x, this.y);
+  }
   ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
   let it = this;
   if (this.y === -15) {
     Jewel.prototype.reset();
     Rock.prototype.reset();
+    stageCount.update();
     orderStillObjects();
     Jewel.prototype.isResetting = true;
     setTimeout(function(){
@@ -389,6 +394,8 @@ Heart.prototype.collision = function(playerX) {
   return collided
 }
 
+Player.prototype.changePlayerSprite = false;
+
 Player.prototype.handleInput = function(keyCode) {
   this.oldX = this.x;
   this.oldY = this.y;
@@ -407,6 +414,12 @@ Player.prototype.handleInput = function(keyCode) {
       this.y += sizes.verticalStep;
       break;
     case 'x':
+      if (Player.prototype.changePlayerSprite) {
+      clearTimeout(Player.prototype.changePlayerSprite);
+      Player.prototype.changePlayerSprite = setTimeout(function(){Player.prototype.changePlayerSprite = false}, 400);
+    } else {
+      Player.prototype.changePlayerSprite = setTimeout(function(){Player.prototype.changePlayerSprite = false}, 400);
+    }
       this.sprite = (function(){
         switch(player.sprite) {
         case 'images/char-boy.png': return 'images/char-horn-girl.png'; break;
