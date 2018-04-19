@@ -2,10 +2,10 @@ let sizes = {
   canvasWidth: 505,
   horizontalStep: 101,
   verticalStep: 83,
-  enemiesNum: 6,
-  jewelsNum: getRandomInt(6),
-  rocksNum: getRandomInt(4),
-  heartsNum: 1,
+  enemiesNum: 0,
+  jewelsNum: 8,
+  rocksNum: 4,
+  heartsNum: 5,
   enemySpeeds: [150, 94, 70, 50, 100, 210],
   x0E: 1, // enemy starting point on x axis
   y0E: 60, // same for y axis
@@ -54,6 +54,37 @@ let obtained = {
   stage: 1,
   invincibillity: false,//timeoutID
 }
+let stage5 = {
+  generateLock: function() {
+    lock = new Lock(404, -35);
+    allRocks.push(lock);
+    stillObjects.push(lock);
+  },
+  rocksPositions: [
+  {"x": 202,"y": -35},
+  {"x": 303,"y": -35},
+  {"x": 101,"y": -35},
+  {"x": 0,"y": -35},
+  {"x": 303,"y": 48},
+  {"x": 303,"y": 131},
+  {"x": 303,"y": 214},
+  {"x": 303,"y": 297},
+  {"x": 101,"y": 131},
+  {"x": 101,"y": 214},
+  {"x": 101, "y": 297},
+  {"x": 101, "y": 380}
+],
+  generateRocks: function() {
+    allRocks = [];
+    stage5.rocksPositions.forEach(function (position) {
+      allRocks.push(new Rock(position.x, position.y));
+    })
+    stillObjects.push(...allRocks);
+  },
+  generateEnemies: function() {
+    createEnemies(4);
+  }
+}
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * max);
@@ -91,7 +122,7 @@ Counter.prototype.update = function() {
     this.value = obtained.lives;
   }
   else if (this.type === "stage" && !Jewel.prototype.isResetting) {
-    obtained.stage++
+    obtained.stage++;
     this.value = obtained.stage;
   }
   this.widthOfText = ctx.measureText(this.text);
@@ -134,14 +165,42 @@ var Jewel = function() {
   this.isAddingPoints = false;
 }
 
+var Key = function(x, y) {
+  this.x = x;
+  this.y = y;
+  sizes.usedSpots.push({"x": this.x, "y": this.y});
+  this.height = (function(y){if (y === 48) {return 1} else {
+    return ( ( y - 48 ) / 83 ) + 1
+  }})(this.y);
+  this.value = 1;
+  this.sprite = 'images/Key.png';
+}
+
+Key.prototype.render = function() {
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+}
+
+Key.prototype.collision = function(playerX) {
+  let collided = false;
+    if (player.height === this.height ) {
+      if (playerX === this.x )
+      {
+        collided = true;
+        this.sprite = 'images/GemEmpty.png';
+        this.value = 0;
+      }
+    }
+return collided;
+}
+
 Jewel.prototype.isResetting = false;
 
 Jewel.prototype.reset = function() {
   if (!Jewel.prototype.isResetting) {
-  allJewels = [];
-  sizes.usedSpots = [];
-  sizes.jewelsNum = getRandomInt(6);
+  if (obtained.stage === 5) { } else {
   createJewels();
+  createHearts();
+   }
 }
 }
 
@@ -161,7 +220,7 @@ var Heart = function() {
     return ( ( y - 48 ) / 83 ) + 1
   }})(this.y);
   this.sprite = 'images/Heart.png';
-  this.isAddingLives = false;
+  this.isAddingPoints = false;
 }
 
 Heart.prototype.addPoints = function() {
@@ -172,9 +231,15 @@ Heart.prototype.addPoints = function() {
   }
 }
 
-var Rock = function() {
+var Rock = function( x , y ) {
+  if (!x && !y) {
   this.x = sizes.getRandomSpot("x");
-  this.y = sizes.getRandomSpot("y", this);
+  this.y = sizes.getRandomSpot("y", this); }
+  else {
+  this.x = x;
+  this.y = y;
+  sizes.usedSpots.push({"x": this.x, "y": this.y});
+  }
   this.height = (function(y){if (y === 48) {return 1} else {
     return ( ( y - 48 ) / 83 ) + 1
   }})(this.y);
@@ -184,7 +249,6 @@ var Rock = function() {
 Rock.prototype.reset = function() {
   if (!Jewel.prototype.isResetting) {
   allRocks = [];
-  sizes.rocksNum = getRandomInt(3);
   createRocks();
 }
 }
@@ -304,11 +368,27 @@ Player.prototype.render = function (dt) {
   ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
   let it = this;
   if (this.y === -15) {
-    Jewel.prototype.reset();
-    Rock.prototype.reset();
     stageCount.update();
-    orderStillObjects();
+    it.height = 5; //immediately "save" the player from false collision with enemy
+    if (obtained.stage === 5 && !Jewel.prototype.isResetting ) {
+      sizes.usedSpots = [];
+      stage5.generateRocks();
+      stage5.generateEnemies();
+      stage5.generateLock();
+      key = new Key(0, 380);
+      Jewel.prototype.reset();
+      createJewels();
+      createHearts();
+      allJewels.push(key);
+      stillObjects.push(key);
+      orderStillObjects();
+    }
+    else if ( obtained.stage !== 5 && !Jewel.prototype.isResetting ) {
+      sizes.usedSpots = [];
+      Rock.prototype.reset();
+      Jewel.prototype.reset();}
     Jewel.prototype.isResetting = true;
+    orderStillObjects();
     setTimeout(function(){
       it.x = sizes.x0P;
       it.y = sizes.y0P;
@@ -319,18 +399,25 @@ Player.prototype.render = function (dt) {
   let collidedJewel = Jewel.prototype.collision(this.x);
   let collidedHeart = Heart.prototype.collision(this.x);
   if ( collidedJewel && !collidedJewel.isAddingPoints ) {
+    if (collidedJewel !== key) {
     collidedJewel.addPoints();
     collidedJewel.value = 0;
     setTimeout(function(){
       collidedJewel.sprite = 'images/GemEmpty.png';
-    }, 75)
+    }, 75)}
   }
-  if (collidedHeart && !collidedHeart.isAddingLives) {
+  if (collidedHeart && !collidedHeart.isAddingPoints) {
     collidedHeart.addPoints();
     collidedHeart.value = 0;
     setTimeout(function(){
       collidedHeart.sprite = 'images/GemEmpty.png';
     }, 75)
+  }
+  if ( key && key.collision(this.x) ) {
+    let lockIndex1 = stillObjects.indexOf(lock);
+    if (lockIndex1 !== -1)  {stillObjects.splice(lockIndex1, 1)};
+    let lockIndex2 = allRocks.indexOf(lock);
+    if (lockIndex2 !== -1)  {allRocks.splice(lockIndex2, 1)};
   }
   if( Enemy.prototype.collision(this.x) && obtained.invincibillity ) {
 
@@ -341,7 +428,7 @@ Player.prototype.render = function (dt) {
       obtained.invincibillity = setTimeout(function() {
           Player.prototype.isResetting = false;
           obtained.invincibillity = false;
-      }, 800) // the time gap between the first timeout and the second timeout
+      }, 300) // the time gap between the first timeout and the second timeout
       // is assumed to prevent getting double damage from two enemies
       // this can also be used for an after-death invincibillity time gap
 }
@@ -437,34 +524,55 @@ Player.prototype.handleInput = function(keyCode) {
 })(this.y)
 }
 
+class Lock extends Rock {
+  constructor(x, y, isLocked) {
+    super(x, y);
+    this.isLocked = true;
+    this.sprite = 'images/Lock.png';
+  }
+  open() {
+    window.this = null;
+    delete window.this;
+  }
+}
+
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
 
+var key;
 var allEnemies = [];
 var allJewels = [];
 var allRocks = [];
 var allHearts = [];
 var stillObjects = []; //align z index of rocks and jewels etc correctly by sorting them in an array
 // from lowest y value to highest and calling the render method on this new array instead
-for (var i=0; i<sizes.enemiesNum; i++) {
+function createEnemies(num) {
+  allEnemies = [];
+  if (!num) {num = sizes.enemiesNum};
+  for (var i=0; i<num; i++) {
   allEnemies.push(new Enemy());
 }
+}
 function createJewels() {
+  allJewels = [];
   for (var e=0; e<sizes.jewelsNum; e++) {
     allJewels.push(new Jewel());
 }
 }
 function createRocks() {
+  allRocks = [];
   for (var i=0; i<sizes.rocksNum; i++) {
     allRocks.push(new Rock());
   }
 }
 function createHearts() {
+  allHearts = [];
   for (var e=0; e<sizes.heartsNum; e++) {
     allHearts.push(new Heart());
   }
 }
+createEnemies();
 createRocks();
 createJewels();
 createHearts();
@@ -489,6 +597,7 @@ var player = new Player();
 // This listens for key presses and sends the keys to your
 // Player.handleInput() method. You don't need to modify this.
 document.addEventListener('keyup', function(e) {
+
     var allowedKeys = {
         37: 'left',
         38: 'up',
