@@ -151,12 +151,9 @@ var Engine = (function(global) {
         /* Loop through all of the objects within the allEnemies array and call
          * the render function you have defined.
          */
-         stillObjects.forEach(function(object) { if (object) {
+         allForeignObjects.forEach(function(object) { if (object) {
             object.render();}
-         })
-        allEnemies.forEach(function(enemy) {
-            enemy.render();
-        });
+         });
         player.render();
         jewelCount.render();
         livesCount.render();

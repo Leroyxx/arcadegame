@@ -3,9 +3,9 @@ let sizes = {
   horizontalStep: 101,
   verticalStep: 83,
   enemiesNum: 5,
-  jewelsNum: 3,
-  rocksNum: 0,
-  heartsNum: 0,
+  jewelsNum: getRandomInt(5)+1,
+  rocksNum: getRandomInt(4),
+  heartsNum: getRandomInt(2)+1,
   enemySpeeds: [150, 94, 70, 50, 100, 210],
   x0E: 1, // enemy starting point on x axis
   y0E: 60, // same for y axis
@@ -312,6 +312,7 @@ Enemy.prototype.update = function(dt) {
     this.x = this.x + (this.speed * dt);
     if (this.x > sizes.canvasWidth) {
       this.reset();
+      orderAllObjects();
     }
 };
 
@@ -391,6 +392,7 @@ Player.prototype.render = function (dt) {
       allJewels.push(key);
       stillObjects.push(key);
       orderStillObjects();
+      orderAllObjects();
     }
     else if ( obtained.stage !== 5 && !Jewel.prototype.isResetting ) {
       sizes.usedSpots = [];
@@ -398,6 +400,7 @@ Player.prototype.render = function (dt) {
       Jewel.prototype.reset();}
     Jewel.prototype.isResetting = true;
     orderStillObjects();
+    orderAllObjects();
     setTimeout(function(){
       it.x = sizes.x0P;
       it.y = sizes.y0P;
@@ -633,8 +636,14 @@ var allForeignObjects = [] // We're going to do the same for all objects that do
 // We'll call a function to order allForeignObjects array every time an enemy changes height
 
 function orderAllObjects() {
-
+  allForeignObjects = [];
+  allForeignObjects.push(...stillObjects);
+  allForeignObjects.push(...allEnemies);
+  allForeignObjects.sort(function(obj1, obj2) {
+    return obj1.y - obj2.y;
+  })
 }
+orderAllObjects();
 
 var jewelCount = new Counter("jewel");
 var livesCount = new Counter("lives");
@@ -667,6 +676,7 @@ document.addEventListener('keyup', function(e) {
       Rock.prototype.reset();
       Jewel.prototype.reset();
       orderStillObjects();
+      orderAllObjects();
       player.sprite = 'images/char-boy.png';
       player.reset();
     }
