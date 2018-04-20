@@ -2,10 +2,10 @@ let sizes = {
   canvasWidth: 505,
   horizontalStep: 101,
   verticalStep: 83,
-  enemiesNum: 0,
-  jewelsNum: 8,
-  rocksNum: 4,
-  heartsNum: 5,
+  enemiesNum: 5,
+  jewelsNum: 3,
+  rocksNum: 0,
+  heartsNum: 0,
   enemySpeeds: [150, 94, 70, 50, 100, 210],
   x0E: 1, // enemy starting point on x axis
   y0E: 60, // same for y axis
@@ -53,6 +53,7 @@ let obtained = {
   lives: 5,
   stage: 1,
   invincibillity: false,//timeoutID
+  gameOver: false
 }
 let stage5 = {
   generateLock: function() {
@@ -130,6 +131,8 @@ Counter.prototype.update = function() {
 
 Counter.prototype.render = function() {
   ctx.font = '36px Tahoma';
+  ctx.fillStyle = '#000000';
+  ctx.strokeStyle = '#000000';
   ctx.strokeText(this.value, this.x, this.y);
   this.widthOfText = ctx.measureText(this.value).width;
   ctx.font = '21px Tahoma';
@@ -333,11 +336,17 @@ var Player = function() {
 // Calling reset on player will put the player back to first square
 Player.prototype.reset = function () {
   if (!Player.prototype.isResetting) {
-    this.x = sizes.x0P;
-    this.y = sizes.y0P;
     this.height = 5;
     obtained.lives--;
-    livesCount.update();
+    if (obtained.lives >= 0) {
+        this.x = sizes.x0P;
+        this.y = sizes.y0P;
+        livesCount.update() // update counter on screen
+      }
+    else {
+      this.sprite = 'images/GemEmpty.png';
+      tellGameOver();
+    }
 }
 }
 
@@ -428,7 +437,7 @@ Player.prototype.render = function (dt) {
       obtained.invincibillity = setTimeout(function() {
           Player.prototype.isResetting = false;
           obtained.invincibillity = false;
-      }, 300) // the time gap between the first timeout and the second timeout
+      }, 350) // the time gap between the first timeout and the second timeout
       // is assumed to prevent getting double damage from two enemies
       // this can also be used for an after-death invincibillity time gap
 }
@@ -522,6 +531,7 @@ Player.prototype.handleInput = function(keyCode) {
   return ( ( (y - 68) / 83 ) + 1 )
   }
 })(this.y)
+
 }
 
 class Lock extends Rock {
@@ -536,17 +546,47 @@ class Lock extends Rock {
   }
 }
 
+var GameOverScreen = function() {
+  this.x = 157;
+  this.y = 303;
+  this.text = 'Game Over';
+  this.subtext = 'Press Z to Play Again';
+};
+
+function tellGameOver() {
+  GameOverScreen.prototype.render = function() {
+    ctx.fillStyle = '#fdf9f0';
+    ctx.fillRect(this.x-20,this.y-50,227,110);
+    ctx.strokeRect(this.x-24,this.y-54,225,107);
+    ctx.strokeStyle = '#fdf9f0';
+    ctx.strokeRect(this.x-13,this.y-42,225,107);
+    ctx.font = '44px Impact';
+    ctx.fillStyle = 'black';
+    ctx.fillText(this.text, this.x, this.y);
+    ctx.font = '44px Impact';
+    ctx.strokeStyle = '#7a2104';
+    ctx.strokeText(this.text, this.x, this.y);
+    ctx.font = '20px Tahoma';
+    ctx.fillStyle = 'black';
+    ctx.fillText(this.subtext, this.x+5, (this.y + 27))
+  }
+  gms = new GameOverScreen;
+  obtained.gameOver = 'true';
+}
+
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
 
 var key;
+var gms; // game over screen
 var allEnemies = [];
 var allJewels = [];
 var allRocks = [];
 var allHearts = [];
-var stillObjects = []; //align z index of rocks and jewels etc correctly by sorting them in an array
+var stillObjects = []; //align z index of rocks and jewels, hearts and key correctly by sorting them in an array
 // from lowest y value to highest and calling the render method on this new array instead
+
 function createEnemies(num) {
   allEnemies = [];
   if (!num) {num = sizes.enemiesNum};
@@ -588,6 +628,13 @@ function orderStillObjects() { //this is how we allign the still objects' visual
 }
 orderStillObjects();
 
+var allForeignObjects = [] // We're going to do the same for all objects that don't include the player
+// meaning we want the enemies to be visually ordered by height with the other still objects as well
+// We'll call a function to order allForeignObjects array every time an enemy changes height
+
+function orderAllObjects() {
+
+}
 
 var jewelCount = new Counter("jewel");
 var livesCount = new Counter("lives");
@@ -603,9 +650,24 @@ document.addEventListener('keyup', function(e) {
         38: 'up',
         39: 'right',
         40: 'down',
-        88: 'x'
+        88: 'x',
+        90: 'z'
     };
 
-    player.handleInput(allowedKeys[e.keyCode]);
-
+    if (!obtained.gameOver && allowedKeys[e.keyCode] !== 'z') {player.handleInput(allowedKeys[e.keyCode]); }
+    else if (allowedKeys[e.keyCode] === 'z') {
+      obtained.stage = 0;
+      stageCount.update();
+      obtained.jewels = 0;
+      jewelCount.update();
+      obtained.lives = 6; //reseting player lowers life by 1
+      obtained.gameOver = false;
+      gms = null;
+      sizes.usedSpots = [];
+      Rock.prototype.reset();
+      Jewel.prototype.reset();
+      orderStillObjects();
+      player.sprite = 'images/char-boy.png';
+      player.reset();
+    }
 });
