@@ -154,7 +154,6 @@ var Engine = (function(global) {
          allForeignObjects.forEach(function(object) { if (object) {
             object.render();}
          });
-        player.render();
         jewelCount.render();
         livesCount.render();
         stageCount.render();

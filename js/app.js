@@ -402,7 +402,7 @@ Player.prototype.update = function (dt) {
   }
 
 if (Rock.prototype.collision(this.x)) {this.x = this.oldX; this.y = this.oldY; this.height = this.oldHeight}
-
+orderAllObjects();
 }
 
 
@@ -766,6 +766,7 @@ function orderAllObjects() {
   allForeignObjects = [];
   allForeignObjects.push(...stillObjects);
   allForeignObjects.push(...allEnemies);
+  allForeignObjects.push(player);
   allForeignObjects.sort(function(obj1, obj2) {
     return obj1.y - obj2.y;
   })
@@ -776,6 +777,8 @@ var jewelCount = new Counter("jewel");
 var livesCount = new Counter("lives");
 var stageCount = new Counter("stage");
 var player = new Player();
+
+orderAllObjects();
 
 function newGame() {
   sizes.enemiesNum = 6;
