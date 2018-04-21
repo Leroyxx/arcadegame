@@ -566,6 +566,8 @@ Player.prototype.handleInput = function(keyCode) {
     case 'down':
       this.y += sizes.verticalStep;
       break;
+    case 'z':
+    newGame(); break;
     case 'x':
       if (Player.prototype.changePlayerSprite) {
       clearTimeout(Player.prototype.changePlayerSprite);
@@ -815,11 +817,10 @@ document.addEventListener('keyup', function(e) {
         90: 'z'
     };
 
-    if ((!obtained.gameOver && allowedKeys[e.keyCode] !== 'z') || (obtained.gameOver && obtained.win)) {player.handleInput(allowedKeys[e.keyCode]); }
-    else if (allowedKeys[e.keyCode] === 'z') {
-      newGame();
+    if ( obtained.gameOver ) { player.handleInput(allowedKeys[e.keyCode]); }
+    else {
+      if (allowedKeys[e.keyCode] === 'z') {}
+      else { player.handleInput(allowedKeys[e.keyCode]); }
     }
-    if (obtained.win && allowedKeys[e.keyCode] === 'z') {
-      newGame();
-    }
+
 });
