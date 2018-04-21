@@ -158,8 +158,11 @@ var Engine = (function(global) {
         jewelCount.render();
         livesCount.render();
         stageCount.render();
-        if (obtained.gameOver && gms !== null) {
+        if ( obtained.gameOver && gms !== false && gms !== undefined ) {
           gms.render();
+        }
+        if (obtained.win && ws !== false && ws !== undefined) {
+          ws.render();
         }
     }
 

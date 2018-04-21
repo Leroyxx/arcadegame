@@ -2,9 +2,9 @@ let sizes = {
   canvasWidth: 505,
   horizontalStep: 101,
   verticalStep: 83,
-  enemiesNum: 5,
-  jewelsNum: getRandomInt(5)+1,
-  rocksNum: getRandomInt(4),
+  enemiesNum: 6,
+  jewelsNum: getRandomInt(7),
+  rocksNum: getRandomInt(4)+1,
   heartsNum: getRandomInt(2)+1,
   enemySpeeds: [150, 94, 70, 50, 100, 210],
   x0E: 1, // enemy starting point on x axis
@@ -48,12 +48,32 @@ let sizes = {
     }
   }
 }
+let designRelated = {
+  counterX: {
+  jewelCount: function() {
+    if (designRelated.counterWidth.jewelCount) { return ( 80-0.25*designRelated.counterWidth.jewelCount ) }
+    else {return 75}},
+  stageCount: function () {
+    if (designRelated.counterWidth.jewelCount && designRelated.counterWidth.stageCount) {
+       return ( 0.24*designRelated.counterWidth.jewelCount + 233  - 0.0056*(designRelated.counterWidth.stageCount * (designRelated.counterWidth.stageCount * 0.5)) )
+    }
+    else {return 245}},
+  livesCount: function () {
+    if (designRelated.counterWidth.jewelCount) { return ( 405 - 0.52*designRelated.counterX.jewelCount() ) }
+    else {return 380}}
+},
+  counterWidth: {
+    jewelCount: false,
+    stageCount: false,
+  }
+}
 let obtained = {
   jewels: 0,
   lives: 5,
   stage: 1,
   invincibillity: false,//timeoutID
-  gameOver: false
+  gameOver: false,
+  win: false
 }
 let stage5 = {
   generateLock: function() {
@@ -94,39 +114,45 @@ function getRandomInt(max) {
 var Counter = function(type) {
   this.type = type;
   this.x;
-  this.y;
+  this.y = 40;
   this.value;
   if (this.type === "jewel") {
     this.value = obtained.jewels;
-    this.x = 70;
-    this.y = 40;
-  }
-  if (this.type === "lives") {
-    this.value = obtained.lives;
-    this.x = 335;
-    this.y = 40;
-  }
-  if (this.type === "stage") {
-    this.value = obtained.stage;
-    this.x = 205;
-    this.y = 40;
-  }
-  //DESIGN RELATED:
-  this.widthOfText;
-}
-
-Counter.prototype.update = function() {
-  if (this.type === "jewel") {
-    this.value = obtained.jewels;
+    this.x = designRelated.counterX.jewelCount();
   }
   else if (this.type === "lives") {
     this.value = obtained.lives;
+    this.x = designRelated.counterX.livesCount();
   }
-  else if (this.type === "stage" && !Jewel.prototype.isResetting) {
-    obtained.stage++;
+  else if (this.type === "stage") {
     this.value = obtained.stage;
+    this.x = designRelated.counterX.stageCount();
   }
-  this.widthOfText = ctx.measureText(this.text);
+  //DESIGN RELATED:
+  this.widthOfText;
+  this.widthOfSubtext;
+}
+
+Counter.prototype.update = function(arg) {
+  if (this.type === "jewel") {
+    this.value = obtained.jewels;
+    setTimeout(function() {
+    jewelCount.x = designRelated.counterX.jewelCount();
+    stageCount.update("design");
+    livesCount.update("design");
+  },1);
+  }
+  else if (this.type === "lives" && arg !== "design") {
+    this.value = obtained.lives;
+  }
+  else if (this.type === "stage" && !Jewel.prototype.isResetting && arg !== "design") {
+    this.x = designRelated.counterX.stageCount();
+    this.value = obtained.stage;
+  } else if (this.type === "stage" && arg === "design") {
+    this.x = designRelated.counterX.stageCount();
+  } else if (this.type === "lives" && arg === "design") {
+    this.x = designRelated.counterX.livesCount();
+  }
 }
 
 Counter.prototype.render = function() {
@@ -143,9 +169,17 @@ Counter.prototype.render = function() {
     ctx.fillText('lives', this.x+this.widthOfText+5, this.y);
   }
   else if (this.type === "stage") {
-    ctx.font = '17px Tahoma';
-    ctx.fillText('st Stage', this.x+this.widthOfText, this.y);
+    ctx.fillText(' Stage', this.x+this.widthOfText, this.y);
   }
+  this.widthOfSubtext = ctx.measureText(this.type).width;
+  this.updateDesign();
+}
+
+Counter.prototype.updateDesign = function() {
+  if (this.type === "jewel") {
+    designRelated.counterWidth.jewelCount = this.widthOfSubtext + this.widthOfText;
+  } else if (this.type === "stage") {
+    designRelated.counterWidth.stageCount = this.widthOfSubtext + this.widthOfText;}
 }
 
 var Jewel = function() {
@@ -363,10 +397,14 @@ Player.prototype.update = function (dt) {
   if (this.y >= sizes.y0P) {
     this.y = sizes.y0P;
   }
+  if (this.y === -98) {
+    this.y = -15;
+  }
 
 if (Rock.prototype.collision(this.x)) {this.x = this.oldX; this.y = this.oldY; this.height = this.oldHeight}
 
 }
+
 
 Player.prototype.render = function (dt) {
   if (obtained.invincibillity) {
@@ -377,9 +415,23 @@ Player.prototype.render = function (dt) {
   }
   ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
   let it = this;
-  if (this.y === -15) {
-    stageCount.update();
+  if (this.height === 0 && obtained.stage !== "Bonus") {
     it.height = 5; //immediately "save" the player from false collision with enemy
+    if (obtained.stage === 5 && !Jewel.prototype.isResetting) {
+      setTimeout(
+        function() { tellWin(); }, 100
+    )
+      sizes.jewelsNum = 10;
+      sizes.heartsNum = 10;
+      sizes.rocksNum = 0;
+      obtained.stage = 'Bonus';
+      stageCount.update();
+      jewelCount.update() // DESIGN RELATED
+    } else if (!Jewel.prototype.isResetting) {
+      obtained.stage++;
+      stageCount.update();
+      jewelCount.update() // DESIGN RELATED
+    }
     if (obtained.stage === 5 && !Jewel.prototype.isResetting ) {
       sizes.usedSpots = [];
       stage5.generateRocks();
@@ -430,6 +482,7 @@ Player.prototype.render = function (dt) {
     if (lockIndex1 !== -1)  {stillObjects.splice(lockIndex1, 1)};
     let lockIndex2 = allRocks.indexOf(lock);
     if (lockIndex2 !== -1)  {allRocks.splice(lockIndex2, 1)};
+    orderAllObjects();
   }
   if( Enemy.prototype.collision(this.x) && obtained.invincibillity ) {
 
@@ -507,7 +560,8 @@ Player.prototype.handleInput = function(keyCode) {
       this.x += sizes.horizontalStep;
       break;
     case 'up':
-      this.y -= sizes.verticalStep;
+      if (this.y >= -15) {
+      this.y -= sizes.verticalStep; }
       break;
     case 'down':
       this.y += sizes.verticalStep;
@@ -530,6 +584,7 @@ Player.prototype.handleInput = function(keyCode) {
     })()
   }
   this.height = (function(y){if (y===68) {return 1}
+  else if (y===-15) {return 0}
   else {
   return ( ( (y - 68) / 83 ) + 1 )
   }
@@ -555,6 +610,77 @@ var GameOverScreen = function() {
   this.text = 'Game Over';
   this.subtext = 'Press Z to Play Again';
 };
+
+var WinScreen = function() {
+  this.x = 157;
+  this.y = 303;
+  this.points = obtained.jewels;
+  this.lives = obtained.lives;
+  this.text = 'You Win!';
+  this.points = 0;
+  this.subtext = `Your score is: ${this.points}`;
+  this.outText = 'Press Z to Play Again';
+}
+
+function tellWin() {
+  WinScreen.prototype.render = function() {
+    ctx.fillStyle = '#d5f4f5';
+    ctx.fillRect(this.x-20,this.y-60,227,110);
+    ctx.strokeRect(this.x-26,this.y-62,225,107);
+    ctx.strokeStyle = '#251e58';
+    ctx.strokeRect(this.x-20,this.y-49,225,107);
+    ctx.font = '44px Impact';
+    ctx.fillStyle = '#0a1856';
+    ctx.fillText(this.text, this.x, this.y);
+    ctx.font = '44px Impact';
+    ctx.strokeStyle = 'white';
+    ctx.strokeText(this.text, this.x, this.y);
+    ctx.font = '20px Tahoma';
+    ctx.fillStyle = 'black';
+    ctx.fillText(this.subtext, this.x+5, (this.y + 27));
+    ctx.fillStyle = 'white';
+    ctx.fillText(this.outText, this.x+2, (this.y + 90));
+  }
+  ws = new WinScreen;
+  obtained.win = 'true';
+  let points = 0;
+  let maxLives = obtained.lives;
+  let maxJewels = obtained.jewels;
+  let jIndex = 0;
+  let lIndex = 1;
+  let maxPoints = maxLives*maxJewels;
+  function countScoreNicely() {
+    setTimeout(function() {
+      if (points !== maxPoints) {
+      if (jIndex !== maxJewels) {
+      points+=50;
+      obtained.jewels-=50;
+      jewelCount.update();
+      jIndex+=50;
+      } else {
+        points = maxJewels * lIndex;
+        lIndex++;
+        obtained.lives--;
+        livesCount.update();
+      }
+      ws.points = points;
+      ws.subtext = `Your score is: ${ws.points}`;
+      /*if (lIndex !== maxLives+1 && maxJewels*lIndex === points) {
+      console.log(lIndex);
+      obtained.lives--;
+      livesCount.update();
+      lIndex++;
+      }*/
+      // Slower score count, less aesthetic but was actually harder to think of
+      // so I'm keeping it as a comment!
+      countScoreNicely();
+    }
+      else {}
+    }, 30);
+  }
+  countScoreNicely();
+  obtained.gameOver = 'true';
+}
 
 function tellGameOver() {
   GameOverScreen.prototype.render = function() {
@@ -583,6 +709,7 @@ function tellGameOver() {
 
 var key;
 var gms; // game over screen
+var ws; // win screen
 var allEnemies = [];
 var allJewels = [];
 var allRocks = [];
@@ -650,6 +777,28 @@ var livesCount = new Counter("lives");
 var stageCount = new Counter("stage");
 var player = new Player();
 
+function newGame() {
+  sizes.enemiesNum = 6;
+  sizes.jewelsNum = getRandomInt(7);
+  sizes.rocksNum = getRandomInt(4)+1;
+  sizes.heartsNum = getRandomInt(2)+1;
+  obtained.stage = 0;
+  stageCount.update();
+  obtained.jewels = 0;
+  jewelCount.update();
+  obtained.lives = 6; //reseting player lowers life by 1
+  obtained.gameOver = false;
+  gms = false;
+  ws = false;
+  sizes.usedSpots = [];
+  Rock.prototype.reset();
+  Jewel.prototype.reset();
+  orderStillObjects();
+  orderAllObjects();
+  player.sprite = 'images/char-boy.png';
+  player.reset();
+}
+
 // This listens for key presses and sends the keys to your
 // Player.handleInput() method. You don't need to modify this.
 document.addEventListener('keyup', function(e) {
@@ -663,21 +812,11 @@ document.addEventListener('keyup', function(e) {
         90: 'z'
     };
 
-    if (!obtained.gameOver && allowedKeys[e.keyCode] !== 'z') {player.handleInput(allowedKeys[e.keyCode]); }
+    if ((!obtained.gameOver && allowedKeys[e.keyCode] !== 'z') || (obtained.gameOver && obtained.win)) {player.handleInput(allowedKeys[e.keyCode]); }
     else if (allowedKeys[e.keyCode] === 'z') {
-      obtained.stage = 0;
-      stageCount.update();
-      obtained.jewels = 0;
-      jewelCount.update();
-      obtained.lives = 6; //reseting player lowers life by 1
-      obtained.gameOver = false;
-      gms = null;
-      sizes.usedSpots = [];
-      Rock.prototype.reset();
-      Jewel.prototype.reset();
-      orderStillObjects();
-      orderAllObjects();
-      player.sprite = 'images/char-boy.png';
-      player.reset();
+      newGame();
+    }
+    if (obtained.win && allowedKeys[e.keyCode] === 'z') {
+      newGame();
     }
 });
