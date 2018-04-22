@@ -1,6 +1,19 @@
-frontend-nanodegree-arcade-game
-===============================
+# Chibi-like take on Frogger: an Udacity FEND Exercise submitted by Leroy
+## How to run
+This game was built using HTML5's canvas technology. Therefore, in order to run this game you will need to have a web browser which supports this technology on your computer. Most modern browsers today will do the job. You can check what browsers support canvas with this link (green means this version of browser supports it): [caniuse.com/#feat=canvas](https://caniuse.com/#feat=canvas)
 
-Students should use this [rubric](https://review.udacity.com/#!/projects/2696458597/rubric) for self-checking their submission. Make sure the functions you write are **object-oriented** - either class functions (like Player and Enemy) or class prototype functions such as Enemy.prototype.checkCollisions, and that the keyword 'this' is used appropriately within your class and class prototype functions to refer to the object the function is called upon. Also be sure that the **readme.md** file is updated with your instructions on both how to 1. Run and 2. Play your arcade game.
+Once you have a supporting browser on your computer, follow these instructions:
+1. Download/pull the files from this repository into a folder on your computer.
+2. Double click/Open index.html with the supporting browser.
 
-For detailed instructions on how to get started, check out this [guide](https://docs.google.com/document/d/1v01aScPjSWCCWQLIpFqvg3-vXLH2e8_SZQKC8jNO0Dc/pub?embedded=true).
+## How to play
+
+1. Your character will immediately spawn, you can control it using the arrow keys.
+2. Press "x" to change character.
+3. If you happen to finish the game/get a game over press "z" to restart (the game will tell you this as well).
+
+## Web console commands
+
+These commands are only required if you wish to mess with the game's code for testing/just for fun. You can open the web console by pressing `CTRL+Shift+J`.
+
+* `allEneies = []` will prevent enemies from moving and hurting player until they are renewed (e.g new stage).
